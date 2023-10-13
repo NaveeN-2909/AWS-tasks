@@ -4,17 +4,17 @@
       {
           "Action": "s3:GetBucketAcl",
           "Effect": "Allow",
-          "Resource": "arn:aws:s3:::docker-logs-dev",
-          "Principal": { "Service": "logs.ap-south-1.amazonaws.com" },
+          "Resource": "arn:aws:s3:::docker-logs-prod",
+          "Principal": { "Service": "logs.me-south-1.amazonaws.com" },
           "Condition": {
             "StringEquals": {
                 "aws:SourceAccount": [
-                    "5391-8372-6103"
+                    "698755976507"
                 ]
             },
             "ArnLike": {
                     "aws:SourceArn": [
-                        "arn:aws:logs:ap-south-1:539183726103:log-group:docker-dev:*"
+                        "arn:aws:logs:ap-south-1:698755976507:log-group:Docker-logs-Prod:*"
                      ]
             }
           }
@@ -22,18 +22,18 @@
       {
           "Action": "s3:PutObject" ,
           "Effect": "Allow",
-          "Resource": "arn:aws:s3:::docker-logs-dev/*",
-          "Principal": { "Service": "logs.ap-south-1.amazonaws.com" },
+          "Resource": "arn:aws:s3:::docker-logs-prod/*",
+          "Principal": { "Service": "logs.me-south-1.amazonaws.com" },
           "Condition": {
             "StringEquals": {
                 "s3:x-amz-acl": "bucket-owner-full-control",
                 "aws:SourceAccount": [
-                    "5391-8372-6103"
+                    "698755976507"
                 ]
             },
             "ArnLike": {
                     "aws:SourceArn": [
-                        "arn:aws:logs:ap-south-1:539183726103:log-group:docker-dev:*"
+                        "arn:aws:logs:ap-south-1:698755976507:log-group:Docker-logs-Prod:*"
                     ]
             }
           }

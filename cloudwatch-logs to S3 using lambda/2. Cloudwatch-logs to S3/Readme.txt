@@ -6,7 +6,7 @@ STEP 2 > edit the Bucket Policy use "S3-policy-dev-fooder_acc.json" file
                                    ( "aws:SourceAccount": ["<ACCOUND_ID_WITHOUT_indentation>"] )
                                    ( "aws:SourceArn"["<ARN_of_the_CLOUD_WATCH_LOG-GROUP>"] )
 
-STEP 3 > Creae IAM Role for Lambda (ETA ROLE)
+STEP 3 > Creae IAM Role for Lambda (ETL ROLE)
          IAM -> Roles -> Create -> edit Permisions -> add (s3-full-access)
                                                           (cloudwatch-access)
                                                           (lambda-execution)

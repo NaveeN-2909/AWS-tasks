@@ -1,0 +1,142 @@
+version: "3"
+
+services:
+  fooder_api:
+    # docker build --no-cache -t twerlo/fooder_api:prod -f Dockerfile.prod .
+    # docker push twerlo/fooder_api:prod
+    image: twerlo/fooder_api:prod
+    environment:
+      - BUILD_ENV=docker_api_prod
+      - NODE_ENV=prod
+    ports:
+      - "8080:8080"
+    command: npm start
+    restart: always
+    networks: ['fooder-api-prod-net']
+    container_name: "fooder_api"
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "me-south-1"
+        awslogs-group: "Docker-logs-Prod"
+        awslogs-stream: "fooder-api"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - micro_qpe
+
+  micro_qpe:
+    image: twerlo/micro-qpe
+    ports:
+      # host:container
+        - "5000:5000"
+    networks: ['fooder-api-prod-net']
+    restart: always
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      - MICROQPE_ENV=prod
+      - REDIS_HOST=redis_json
+      - COLLECTION_NAME=${MICRO_QPE_COLLECTION_NAME}
+      - DB_NAME=${MICRO_QPE_DB_NAME}
+      - DB_URL=${MICRO_QPE_DB_URL}
+      - FIREBASE_SERVICE_ACCOUNT_FILE=/usr/src/app/firebase_service_file.json
+    volumes:
+        - ./firebase_service_file.json:/usr/src/app/firebase_service_file.json
+    depends_on:
+        - redis_json
+    container_name: "micro_qpe"
+
+  redis_json:
+    networks: ['fooder-api-prod-net']
+    image: redislabs/rejson:2.0.7
+    ports:
+        - "6379:6379"
+    restart: always
+    container_name: "redis_json"
+
+  fooder_redirector:
+    networks: ['fooder-api-prod-net']
+    image: twerlo/fooder-redirector:latest
+    environment:
+      - NODE_ENV=prod
+      - PORT=8085
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+        - 8085:8085
+    restart: always
+    container_name: "fooder_redirector"
+
+  fooder_redirector_dev:
+    networks: ['fooder-api-prod-net']
+    image: twerlo/fooder-redirector:latest
+    environment:
+      - NODE_ENV=dev
+      - PORT=8086
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+        - 8086:8086
+    restart: always
+    container_name: "fooder_redirector_dev"
+
+  # varnish_cache:
+  #   networks: ['fooder-api-prod-net']
+  #   image: dotronglong/varnish:6
+  #   labels:
+  #     - "com.centurylinklabs.watchtower.enable=false"
+  #   ports:
+  #       - "8079:6060"
+  #   restart: always
+  #   labels:
+  #     - "com.centurylinklabs.watchtower.enable=false"
+  #   volumes:
+  #     - ./default.vcl:/etc/varnish/default.vcl
+  #   container_name: "varnish_cache"
+  #   depends_on:
+  #     - fooder_api
+
+  caddy_service:
+    image: 'caddy:latest'
+    networks: ['fooder-api-prod-net']
+    environment:
+      - SSL_EMAIL=${SSL_EMAIL}
+      - DOMAIN_API=${DOMAIN_API}
+      - DOMAIN_CLOUDFRONT_ORDER=${DOMAIN_CLOUDFRONT_ORDER}
+      - DOMAIN_CLOUDFRONT_ADMIN=${DOMAIN_CLOUDFRONT_ADMIN}
+    volumes:
+      - /vol/caddy/data:/data/caddy
+      - /vol/caddy/configs:/etc/caddy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    ports:
+      - 80:80
+      - 443:443
+    container_name: "caddy_service"
+
+  watchtower:
+    image: containrrr/watchtower
+    networks: ['fooder-api-prod-net']
+    command:
+      - "--cleanup"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      - REPO_USER=${DOCKER_REPO_USER}
+      - REPO_PASS=${DOCKER_REPO_PASSWORD}
+      - WATCHTOWER_POLL_INTERVAL=60
+      - TZ=Asia/Kolkata
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    container_name: "watchtower"
+
+networks: {fooder-api-prod-net: {}}
+
+# $ sudo mkdir -p /vol/caddy/data
+# $ sudo mkdir -p /vol/caddy/configs
+# $ sudo nano /vol/caddy/configs/Caddyfile
+
+# Then populate it with the conent in Caddyfile
+
+# docker-compose up -d
